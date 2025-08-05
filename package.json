@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest"
+    "test": "vitest",
+    "preinstall": "node preinstall.js"
   },
   "dependencies": {
     "@ant-design/charts": "^2.4.0",

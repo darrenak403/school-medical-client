@@ -1,4 +1,4 @@
-[![School Medical Project (CI included) | © 2025 by ngothanhdatAK](https://github.com/ngothanhdat-AK/school-medical-client/actions/workflows/node.js.yml/badge.svg)](https://github.com/ngothanhdat-AK/school-medical-client/actions/workflows/node.js.yml)
+[![School Medical Project | © 2025 by ngothanhdatAK](https://github.com/ngothanhdat-AK/school-medical-client/actions/workflows/node.js.yml/badge.svg)](https://github.com/ngothanhdat-AK/school-medical-client/actions/workflows/node.js.yml)
 
 # School Medical Management System
 
