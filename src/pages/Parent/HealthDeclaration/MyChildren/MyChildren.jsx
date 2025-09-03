@@ -12,46 +12,57 @@ import {
   CheckCircle,
 } from "lucide-react";
 import {format, parseISO} from "date-fns";
+import useSWR from "swr";
+
+// Hàm fetcher dùng cho useSWR, nhận url và trả về dữ liệu từ API
+const fetcher = (url) => axiosInstance.get(url).then((res) => res.data);
+
 const MyChildren = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const parentId = useSelector((state) => state.user?.userId);
-  const [data, setData] = useState([]);
-  const [declarationMap, setDeclarationMap] = useState({});
 
+  // 1. Lấy danh sách học sinh bằng useSWR
+  // Nếu có parentId thì gọi API, nếu chưa có thì không gọi
+  const {data: students = []} = useSWR(
+    parentId ? `/api/parents/${parentId}/students` : null,
+    fetcher
+  );
+
+  // 2. Khi có dữ liệu học sinh, lưu vào localStorage và redux (giống useEffect cũ)
   useEffect(() => {
-    const fetchApi = async () => {
-      try {
-        const response = await axiosInstance.get(
-          `/api/parents/${parentId}/students`
-        );
-        setData(response.data);
-        localStorage.setItem("students", JSON.stringify(response.data));
-        dispatch(setListStudentParentPersist(response.data));
-        response.data.forEach(async (item) => {
+    if (students.length > 0) {
+      localStorage.setItem("students", JSON.stringify(students));
+      dispatch(setListStudentParentPersist(students));
+    }
+  }, [students, dispatch]);
+
+  // 3. Lấy trạng thái khai báo sức khỏe cho từng học sinh bằng useSWR
+  // Nếu có học sinh thì gọi API cho từng studentId, trả về một map
+  const {data: declarationMap = {}} = useSWR(
+    //
+    students.length > 0
+      ? ["health-declarations", students.map((s) => s.studentId)]
+      : null,
+    //
+    async () => {
+      const map = {};
+      await Promise.all(
+        students.map(async (item) => {
           try {
             const res = await axiosInstance.get(
               `/api/students/${item.studentId}/health-declarations`
             );
-            setDeclarationMap((prev) => ({
-              ...prev,
-              [item.studentId]:
-                res.data.healthDeclaration?.isDeclaration || false,
-            }));
+            map[item.studentId] =
+              res.data.healthDeclaration?.isDeclaration || false;
           } catch {
-            setDeclarationMap((prev) => ({
-              ...prev,
-              [item.studentId]: false,
-            }));
+            map[item.studentId] = false;
           }
-        });
-        // eslint-disable-next-line no-unused-vars
-      } catch (error) {
-        setData([]);
-      }
-    };
-    fetchApi();
-  }, [parentId, dispatch]);
+        })
+      );
+      return map;
+    }
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8">
@@ -141,7 +152,7 @@ const MyChildren = () => {
             overflowY: "auto",
           }}
         >
-          {data.length === 0 ? (
+          {students.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                 <User className="w-8 h-8 text-gray-400" />
@@ -162,7 +173,7 @@ const MyChildren = () => {
                 gap: 20,
               }}
             >
-              {data.map((item) => (
+              {students.map((item) => (
                 <div
                   key={item.studentId}
                   className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300"
